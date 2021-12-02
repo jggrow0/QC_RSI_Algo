@@ -5,19 +5,20 @@ from Portfolio.NullPortfolioConstructionModel import NullPortfolioConstructionMo
 from Risk.MaximumDrawdownPercentPerSecurity import MaximumDrawdownPercentPerSecurity
 from Selection.QC500UniverseSelectionModel import QC500UniverseSelectionModel
 from RsiAlphaModelJGG import RsiAlphaModelJGG
-#from PortfolioModelJGG import PortfolioModelJGG
-#from AlgorithmImports import *
+from PortfolioModelJGG import PortfolioModelJGG
+from AlgorithmImports import *
 
 class SimpleRSITestQC500Universe(QCAlgorithm):
 
     def Initialize(self):
         self.SetStartDate(2021,9,1) # Set Start Date
         self.SetEndDate(2021,9,30) # Set End Date
-        self.SetCash(100000) # Set Strategy Cash
+        self.SetCash(1000000000) # Set Strategy Cash
         self.SetBrokerageModel(BrokerageName.InteractiveBrokersBrokerage)
         self.SetExecution(ImmediateExecutionModel())
-        #self.SetPortfolioConstruction(PortfolioModelJGG(Time.Multiply(Extensions.ToTimeSpan(Resolution.Minute), 1)))
-        self.SetPortfolioConstruction(EqualWeightingPortfolioConstructionModel(Time.Multiply(Extensions.ToTimeSpan(Resolution.Minute), 1)))
+        self.SetPortfolioConstruction(PortfolioModelJGG(Time.Multiply(Extensions.ToTimeSpan(Resolution.Minute), 1)))
+        #self.SetPortfolioConstruction(EqualWeightingPortfolioConstructionModel(Time.Multiply(Extensions.ToTimeSpan(Resolution.Minute), 1)))
+        #self.SetPortfolioConstruction(EqualWeightingCloneJGG(Time.Multiply(Extensions.ToTimeSpan(Resolution.Minute), 1)))
         self.SetRiskManagement(NullRiskManagementModel())
         #symbols = [ Symbol.Create("SPY", SecurityType.Equity, Market.USA), Symbol.Create("GE", SecurityType.Equity, Market.USA), Symbol.Create("BA", SecurityType.Equity, Market.USA) ]
         #self.SetUniverseSelection(ManualUniverseSelectionModel(symbols))
