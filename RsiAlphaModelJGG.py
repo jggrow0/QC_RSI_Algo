@@ -4,6 +4,9 @@ class RsiAlphaModelJGG(AlphaModel):
         self.period = period
         self.resolution = resolution
         self.symbolDataBySymbol = {}
+        self.openWindows = {}
+        self.highWindows = {}
+        self.lowWindows = {}
         self.closeWindows = {}
         self.rsiWindows = {}
         resolutionString = Extensions.GetEnumString(resolution, Resolution)
@@ -18,15 +21,16 @@ class RsiAlphaModelJGG(AlphaModel):
                 self.closeWindows[symbol].Add(data[symbol].Close)
             rsi = symbolData.RSI
             if rsi.IsReady and timeString[1] == "09:31:00":
-                #try:
+                try:
                     self.rsiWindows[symbol].Add(rsi.Current.Value)
                     self.blip = self.rsiWindows[symbol][0] - self.rsiWindows[symbol][1]
                     volatility=(max(self.closeWindows[symbol])-min(self.closeWindows[symbol]))/(max(self.closeWindows[symbol])+min(self.closeWindows[symbol]))*2/self.period
                     if self.rsiWindows[symbol][1] < 30 and self.blip >= 5:
                         for periodIter in [5]:
-                            closeList = list(self.closeWindows[symbol])
-                            recentMax = max(closeList[0:periodIter-1])
-                            recentMin = min(closeList[0:periodIter-1])
+                            highList = list(self.highWindows[symbol])
+                            lowList = list(self.lowWindows[symbol])
+                            recentMax = max(highList[0:periodIter-1])
+                            recentMin = min(lowList[0:periodIter-1])
                             Mag = (recentMax - recentMin)/recentMin
                             self.insightPeriod = Time.Multiply(Extensions.ToTimeSpan(self.resolution), periodIter)
                             insights.append(Insight.Price(symbol, self.insightPeriod, InsightDirection.Up,Mag,None,None,None))
@@ -38,8 +42,8 @@ class RsiAlphaModelJGG(AlphaModel):
                             Mag = -1*(recentMax - recentMin)/recentMax
                             self.insightPeriod = Time.Multiply(Extensions.ToTimeSpan(self.resolution), periodIter)
                             insights.append(Insight.Price(symbol, self.insightPeriod, InsightDirection.Down,Mag,None,None,None))
-                #except:
-                    #algorithm.Log(timeDateString)
+                except:
+                    algorithm.Log(str(symbol)+': '+timeDateString)
         return insights
 
     def OnSecuritiesChanged(self, algorithm, changes):
@@ -60,10 +64,18 @@ class RsiAlphaModelJGG(AlphaModel):
         history = algorithm.History(addedSymbols, self.period + 20, self.resolution)
         
         for symbol in addedSymbols:
+            algorithm.Securities[symbol].FeeModel = ConstantFeeModel(0)
+            #algorithm.Securities[symbol].SetSlippageModel(ConstantSlippageModel(0))
             rsi = algorithm.RSI(symbol, self.period, MovingAverageType.Wilders, self.resolution)
             self.rsiWindows[symbol] = RollingWindow[float](20)
+            self.openWindows[symbol] = RollingWindow[float](self.period)
+            self.highWindows[symbol] = RollingWindow[float](self.period)
+            self.lowWindows[symbol] = RollingWindow[float](self.period)
             self.closeWindows[symbol] = RollingWindow[float](self.period)
             for tuple in history.loc[symbol].itertuples():
+                self.openWindows[symbol].Add(tuple.close)
+                self.highWindows[symbol].Add(tuple.close)
+                self.lowWindows[symbol].Add(tuple.close)
                 self.closeWindows[symbol].Add(tuple.close)
                 rsi.Update(tuple.Index, tuple.close)
                 if rsi.IsReady:
